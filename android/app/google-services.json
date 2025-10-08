@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "644851978935",
+    "project_id": "smartpoultry-new",
+    "storage_bucket": "smartpoultry-new.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:644851978935:android:0d3241915083c305097332",
+        "android_client_info": {
+          "package_name": "com.example.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBYeucQZBskwWN4LuODw1JKZpShJy_kSUQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
