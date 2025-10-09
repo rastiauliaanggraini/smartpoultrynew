@@ -34,19 +34,23 @@ final GoRouter _router = GoRouter(
   ],
   redirect: (context, state) {
     final loggedIn = FirebaseAuth.instance.currentUser != null;
-    final loggingIn = state.matchedLocation == '/' || state.matchedLocation == '/register';
+    final onLoginPage = state.matchedLocation == '/';
+    final onRegisterPage = state.matchedLocation == '/register';
 
-    // If not logged in and not on a login/register page, redirect to login
-    if (!loggedIn && !loggingIn) {
-      return '/';
-    }
-
-    // If logged in and on a login/register page, redirect to home
-    if (loggedIn && loggingIn) {
+    // If the user is logged in and tries to go to the login page, redirect to home.
+    if (loggedIn && onLoginPage) {
       return '/home';
     }
 
-    return null; // No redirect needed
+    // If the user is NOT logged in and tries to access a protected page,
+    // redirect them to the login page.
+    if (!loggedIn && !onLoginPage && !onRegisterPage) {
+      return '/';
+    }
+
+    // In all other cases, no redirect is needed.
+    // This allows the registration flow to complete without premature redirection.
+    return null;
   },
   refreshListenable: GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges()),
 );

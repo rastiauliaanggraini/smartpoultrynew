@@ -15,7 +15,6 @@ dependencies:
   firebase_auth: any
   go_router: any
   google_fonts: any
-  firebase_ai: any
 
 dev_dependencies:
   flutter_test:
