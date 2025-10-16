@@ -79,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final int chickenCount = int.tryParse(_chickenController.text) ?? 0;
       
       // Simple Formula Logic
-      // 1. Base production: Assume 1 chicken produces ~0.85 eggs/day on average.
+      // 1. Base production: Assume 1     chicken produces ~0.85 eggs/day on average.
       double baseProduction = chickenCount * 0.85;
 
       // 2. Adjustment factors based on environment.
