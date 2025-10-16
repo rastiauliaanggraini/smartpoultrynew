@@ -1,23 +1,37 @@
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../main.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings', style: GoogleFonts.montserrat()),
-        backgroundColor: Colors.white,
-        elevation: 1,
+        title: const Text('Settings'),
       ),
-      body: Center(
-        child: Text(
-          'Settings Screen',
-          style: GoogleFonts.montserrat(fontSize: 20),
-        ),
+      body: ListView(
+        children: [
+          ListTile(
+            title: const Text('Dark Mode'),
+            trailing: Switch(
+              value: themeProvider.themeMode == ThemeMode.dark,
+              onChanged: (value) {
+                themeProvider.toggleTheme();
+              },
+            ),
+          ),
+          ListTile(
+            title: const Text('System Theme'),
+            onTap: () {
+              themeProvider.setSystemTheme();
+            },
+          ),
+        ],
       ),
     );
   }

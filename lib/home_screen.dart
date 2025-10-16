@@ -165,8 +165,9 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.logout, color: Colors.black54),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              if (!mounted) return;
-              context.go('/');
+              if (mounted) {
+                 context.go('/');
+              }
             },
           ),
         ],
