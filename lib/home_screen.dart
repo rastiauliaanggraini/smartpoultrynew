@@ -26,7 +26,10 @@ class _HomeScreenState extends State<HomeScreen> {
   double _humidity = 60.0;
 
   // State for prediction
-  String _predictionResult = '--';
+  String _predictionStatus = 'N/A';
+  String _recommendation = 'Fill the form to get a prediction.';
+  String _eggProduction = '--';
+  Color _cardColor = Colors.white;
   bool _isLoading = false;
 
   // Timer for simulating sensor updates
@@ -39,8 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _sensorTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
       if (mounted) {
         setState(() {
-          _temperature = 24.0 + Random().nextDouble() * 2; // 24.0 to 26.0
-          _humidity = 58.0 + Random().nextDouble() * 4; // 58.0 to 62.0
+          _temperature = 22.0 + Random().nextDouble() * 8; // Simulate 22°C to 30°C
+          _humidity = 55.0 + Random().nextDouble() * 15; // Simulate 55% to 70%
         });
       }
     });
@@ -57,10 +60,9 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // Re-enabled prediction logic with a simple formula
   Future<void> _getPrediction() async {
     if (_chickenController.text.isEmpty) {
-      if (!mounted) return;
+      if (!mounted) return; // FIX: Check if mounted before using BuildContext
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter the amount of chicken.')),
       );
@@ -69,42 +71,71 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       _isLoading = true;
-      _predictionResult = 'Calculating...';
     });
 
-    // Simulate a short delay for calculation feel
-    await Future.delayed(const Duration(milliseconds: 800));
+    // Simulate a short delay
+    await Future.delayed(const Duration(milliseconds: 1000));
 
     try {
+      // Parse all inputs with defaults
       final int chickenCount = int.tryParse(_chickenController.text) ?? 0;
-      
-      // Simple Formula Logic
-      // 1. Base production: Assume 1     chicken produces ~0.85 eggs/day on average.
+      final double ammonia = double.tryParse(_ammoniaController.text) ?? 0;
+      final double light = double.tryParse(_lightController.text) ?? 15;
+      final double noise = double.tryParse(_noiseController.text) ?? 70;
+
+      // --- Advanced Health & Recommendation Logic ---
+      String newStatus = 'Healthy 🐔';
+      String newRecommendation = 'Conditions are optimal. Keep up the good work!';
+      Color newCardColor = Colors.green.shade100;
+
+      // Check for issues, ordered by priority
+      if (ammonia > 25) {
+        newStatus = 'Danger ☣️';
+        newRecommendation = 'Ammonia level is critical! Check ventilation and litter immediately.';
+        newCardColor = Colors.red.shade100;
+      } else if (_temperature > 28) {
+        newStatus = 'Warning 🔥';
+        newRecommendation = 'Suhu terlalu tinggi! Kurangi pakan 10% dan perbaiki ventilasi.';
+        newCardColor = Colors.amber.shade100;
+      } else if (_temperature < 22) {
+        newStatus = 'Warning ❄️';
+        newRecommendation = 'Suhu terlalu rendah. Tambah pakan 5% dan periksa pemanas.';
+        newCardColor = Colors.amber.shade100;
+      } else if (_humidity > 70) {
+        newStatus = 'Warning 💧';
+        newRecommendation = 'Humidity is high. Increase ventilation to reduce moisture.';
+        newCardColor = Colors.amber.shade100;
+      } else if (noise > 85) {
+        newStatus = 'Warning 🔊';
+        newRecommendation = 'Noise level is high. Minimize disturbances near the coop.';
+        newCardColor = Colors.amber.shade100;
+      } else if (light < 10) { // FIX: Using the 'light' variable
+        newStatus = 'Warning 💡';
+        newRecommendation = 'Light intensity is too low. Ensure at least 14-16 hours of light.';
+        newCardColor = Colors.amber.shade100;
+      }
+
+      // --- Egg Production Formula ---
       double baseProduction = chickenCount * 0.85;
-
-      // 2. Adjustment factors based on environment.
-      double tempFactor = 1.0;
-      if (_temperature < 20 || _temperature > 26) {
-        tempFactor = 0.95; // 5% reduction for non-ideal temperature
-      }
-
-      double humidityFactor = 1.0;
-      if (_humidity < 50 || _humidity > 70) {
-        humidityFactor = 0.97; // 3% reduction for non-ideal humidity
-      }
-
-      // 3. Final calculation
+      double tempFactor = (_temperature < 22 || _temperature > 28) ? 0.95 : 1.0;
+      double humidityFactor = (_humidity < 50 || _humidity > 70) ? 0.97 : 1.0;
       int finalPrediction = (baseProduction * tempFactor * humidityFactor).round();
 
       if (mounted) {
         setState(() {
-          _predictionResult = finalPrediction.toString();
+          _predictionStatus = newStatus;
+          _recommendation = newRecommendation;
+          _cardColor = newCardColor;
+          _eggProduction = finalPrediction.toString();
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _predictionResult = 'Error';
+          _predictionStatus = 'Error';
+          _recommendation = 'Could not process the prediction. Please check your inputs.';
+          _cardColor = Colors.grey.shade300;
+          _eggProduction = '--';
         });
       }
     } finally {
@@ -151,7 +182,9 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 25),
             _buildManualInputSection(),
             const SizedBox(height: 30),
-            _buildPredictionSection(),
+            _buildPredictionButton(),
+            const SizedBox(height: 25),
+            _buildPredictionResultCard(),
           ],
         ),
       ),
@@ -207,50 +240,69 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPredictionSection() {
-    return Column(
-      children: [
-        Center(
-          child: ElevatedButton.icon(
-            icon: const Icon(Icons.analytics_outlined),
-            label: Text('Calculate Prediction', style: GoogleFonts.lato(fontSize: 16, fontWeight: FontWeight.bold)),
-            onPressed: _isLoading ? null : _getPrediction, // Re-enabled the button
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1B3D6D),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
+  Widget _buildPredictionButton() {
+    return Center(
+      child: ElevatedButton.icon(
+        icon: _isLoading ? Container() : const Icon(Icons.analytics_outlined),
+        label: Text(_isLoading ? 'Calculating...' : 'Calculate Prediction', style: GoogleFonts.lato(fontSize: 16, fontWeight: FontWeight.bold)),
+        onPressed: _isLoading ? null : _getPrediction,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1B3D6D),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        const SizedBox(height: 25),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black12, spreadRadius: 1, blurRadius: 5)],
-          ),
-          child: Column(
+      ),
+    );
+  }
+
+  Widget _buildPredictionResultCard() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _cardColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black12, spreadRadius: 1, blurRadius: 5)], // FIX: Replaced withOpacity
+        border: Border.all(color: Colors.black12) // FIX: Replaced withOpacity
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('AI Prediction', style: GoogleFonts.montserrat(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+          const Divider(height: 20),
+
+          // Status
+          Text('Status: $_predictionStatus', style: GoogleFonts.lato(fontSize: 18, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 15),
+
+          // Recommendation
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Predicted Daily Egg Production', style: GoogleFonts.montserrat(fontSize: 16, color: Colors.black54)),
-              const SizedBox(height: 10),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : Text(
-                      _predictionResult,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.robotoMono(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFFFFD700), 
-                      ),
-                    ),
+              const Icon(Icons.lightbulb_outline, color: Colors.orange, size: 24),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Recommendation: $_recommendation', style: GoogleFonts.lato(fontSize: 16))),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 15),
+
+          // Egg Production
+          Row(
+             crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+                const Icon(Icons.egg_outlined, color: Colors.brown, size: 24),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Predicted Daily Egg Production: $_eggProduction', style: GoogleFonts.lato(fontSize: 16))),
+            ],
+          )
+
+        ],
+      ),
     );
   }
 
@@ -262,7 +314,10 @@ class _HomeScreenState extends State<HomeScreen> {
         keyboardType: TextInputType.number,
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: GoogleFonts.lato(),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          filled: true,
+          fillColor: Colors.white,
         ),
       ),
     );
